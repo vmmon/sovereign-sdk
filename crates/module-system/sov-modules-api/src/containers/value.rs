@@ -101,6 +101,19 @@ where
         state.set(&key, self.slot_value(value))
     }
 
+    /// Sets the value.
+    pub fn set_direct<Vq, Writer>(&mut self, value: V, state: &mut Writer) -> Result<(), Writer::Error>
+    where
+        Vq: ?Sized,
+        Codec::ValueCodec: EncodeLike<Vq, V>,
+        Writer: StateWriter<N>,
+    {
+        let key = self.slot_key();
+        #[cfg(feature = "expensive-observability")]
+        tracing::trace!(%key, "Setting state value");
+        state.set_direct(&key, value, self.codec().value_codec())
+    }
+
     /// Gets the value from state or returns None if the value is absent.
     pub fn get<Reader: StateReader<N>>(
         &self,

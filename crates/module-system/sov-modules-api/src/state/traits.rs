@@ -9,8 +9,8 @@ use sov_state::pinned_cache::PinnedCache;
 use sov_state::StorageProof;
 use sov_state::{
     namespaces, Accessory, CompileTimeNamespace, EventContainer, Kernel, Namespace,
-    ProvableCompileTimeNamespace, SlotKey, SlotValue, StateCodec, StateItemCodec, StateItemDecoder,
-    User,
+    ProvableCompileTimeNamespace, SlotKey, SlotValue, StateCodec, StateItemCodec, StateItemDecoder, EncodeLike, StateItemEncoder,
+    SlotValueFromCodec, User,
 };
 use thiserror::Error;
 #[cfg(feature = "expensive-observability")]
@@ -460,6 +460,23 @@ pub trait StateWriter<N: CompileTimeNamespace>: UniversalStateAccessor {
     /// ## Error
     /// This method can fail if the gas meter doesn't have enough funds to pay for the write operation.
     fn set(&mut self, key: &SlotKey, value: SlotValue) -> Result<(), Self::Error>;
+
+
+    /// Set a value in the storage.
+    fn set_direct<V, Vq, Codec>(
+        &mut self,
+        storage_key: &SlotKey,
+	value: V,
+	codec: &Codec,
+
+    ) -> Result<(), Self::Error>
+    where
+        Vq: ?Sized,
+        Codec: EncodeLike<Vq, V> + StateItemDecoder<V>,
+    {
+	self.set(storage_key, SlotValue::new(&value, codec))
+    }
+
 
     /// Deletes a value from the storage. Basically a wrapper around [`StateWriter::delete`].
     ///
