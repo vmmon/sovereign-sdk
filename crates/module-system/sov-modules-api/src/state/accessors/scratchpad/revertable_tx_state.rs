@@ -88,7 +88,7 @@ impl<S: Spec, I: TxState<S>> PerBlockCache for RevertableTxState<'_, S, I> {
         }
     }
 
-    fn put_cached<T: 'static + Send + Sync + BorshSerializedSize>(
+    fn put_cached<T: 'static + Send + Sync>(
         &mut self,
         slot_key: Option<SlotKey>,
         value: T,

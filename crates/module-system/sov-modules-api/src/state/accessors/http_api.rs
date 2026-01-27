@@ -280,7 +280,7 @@ impl<S: Spec> PerBlockCache for ApiStateAccessor<S> {
         }
     }
 
-    fn put_cached<T: 'static + Send + Sync + BorshSerializedSize>(
+    fn put_cached<T: 'static + Send + Sync>(
         &mut self,
         slot_key: Option<SlotKey>,
         value: T,

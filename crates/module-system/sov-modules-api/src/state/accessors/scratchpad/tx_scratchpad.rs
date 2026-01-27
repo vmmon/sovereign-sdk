@@ -11,7 +11,7 @@ use super::super::checkpoints::StateCheckpoint;
 use super::super::internals::{FirstTimeReads, RevertableWriter};
 use super::super::temp_cache::TempCache;
 use super::super::{
-    BorshSerializedSize, StateMetricsProvider, StateProvider, UniversalStateAccessor,
+    StateMetricsProvider, StateProvider, UniversalStateAccessor,
 };
 use super::PreExecWorkingSet;
 use crate::module::Spec;
@@ -127,7 +127,7 @@ impl<S: Spec, I: StateProvider<S>> PerBlockCache for TxScratchpad<S, I> {
         self.inner.get_cached::<T>(slot_key)
     }
 
-    fn put_cached<T: 'static + Send + Sync + BorshSerializedSize>(
+    fn put_cached<T: 'static + Send + Sync>(
         &mut self,
         slot_key: Option<SlotKey>,
         value: T,

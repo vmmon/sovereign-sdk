@@ -11,12 +11,7 @@ use sov_rollup_interface::common::SizedSafeString;
 /// This is used to warn if the cache is getting too large.
 const MAX_EXPECTED_CACHE_ITEMS: usize = 100;
 
-/// The maximum number of bytes we expect in the temporary cache.
-///
-/// This is used to warn if the cache is getting too large.
-const MAX_EXPECTED_CACHE_BYTES: usize = 10_000_000; // 10MB
-
-type Value = Option<(Box<(dyn Any + Send + Sync + 'static)>, usize)>;
+type Value = Option<Box<dyn Any + Send + Sync + 'static>>;
 
 /// The result of a cache lookup.
 #[derive(Debug, PartialEq, Eq)]
@@ -41,8 +36,6 @@ impl<'a, T> From<Option<Option<&'a T>>> for CacheLookup<'a, T> {
 /// not required.
 pub struct TempCache {
     cache: HashMap<(TypeId, Option<SlotKey>), Value>,
-    /// An estimate of the memory size of the cache. Note that `None` values are not included in this count.
-    memory_size: usize,
 }
 
 impl Default for TempCache {
@@ -95,7 +88,6 @@ impl TempCache {
     pub fn new() -> Self {
         Self {
             cache: HashMap::new(),
-            memory_size: 0,
         }
     }
 
@@ -105,7 +97,7 @@ impl TempCache {
             .get(&(TypeId::of::<T>(), slot_key))
             .map(|v| {
                 v.as_ref().map(|v| {
-                    v.0.downcast_ref::<T>()
+                    v.downcast_ref::<T>()
                         .expect("Invalid type in type map. This is a bug!")
                 })
             })
@@ -113,25 +105,15 @@ impl TempCache {
     }
 
     /// Sets a value in the cache.
-    pub fn set<T: 'static + Send + Sync + BorshSerializedSize>(
+    pub fn set<T: 'static + Send + Sync>(
         &mut self,
         slot_key: Option<SlotKey>,
         value: T,
     ) {
         let type_id = TypeId::of::<T>();
-        let size = value.serialized_size();
         let boxed = Box::new(value);
-        let prev = self.cache.insert((type_id, slot_key), Some((boxed, size)));
-        if let Some(Some((_prev, prev_size))) = prev {
-            self.memory_size -= prev_size;
-        }
+        let _prev = self.cache.insert((type_id, slot_key), Some(boxed));
         if self.cache.len() > MAX_EXPECTED_CACHE_ITEMS {
-            tracing::warn!(
-                "Temporary value cache is getting large! This may result in degraded performance."
-            );
-        }
-        self.memory_size += size;
-        if self.memory_size > MAX_EXPECTED_CACHE_BYTES {
             tracing::warn!(
                 "Temporary value cache is getting large! This may result in degraded performance."
             );
@@ -140,19 +122,12 @@ impl TempCache {
 
     /// Deletes a value from the cache.
     pub fn delete<T: 'static + Send + Sync>(&mut self, slot_key: Option<SlotKey>) {
-        let prev = self.cache.insert((TypeId::of::<T>(), slot_key), None);
-        if let Some(Some((_prev, size))) = prev {
-            self.memory_size -= size;
-        }
+	self.cache.insert((TypeId::of::<T>(), slot_key), None);
     }
 
     pub fn update_with(&mut self, other: Self) {
         for (key, value) in other.cache.into_iter() {
-            let new_size = value.as_ref().map(|v| v.1).unwrap_or(0);
-            if let Some(Some((_prev, prev_size))) = self.cache.insert(key, value) {
-                self.memory_size -= prev_size;
-            };
-            self.memory_size += new_size;
+	    self.cache.insert(key, value);
         }
     }
 

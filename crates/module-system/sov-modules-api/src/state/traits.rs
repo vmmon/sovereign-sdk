@@ -41,7 +41,7 @@ use crate::{Gas, GasMeter, GasMeteringError, GasSpec, RevertableTxState, Spec};
 pub trait StateAccessor: StateReaderAndWriter<User> {
     /// Converts this accessor into an [`UnmeteredStateWrapper`]. This method should only be used either in tests or in the `EVM` module.
     #[cfg(any(feature = "test-utils", feature = "evm"))]
-    fn to_unmetered(&mut self) -> UnmeteredStateWrapper<Self>
+    fn to_unmetered(&mut self) -> UnmeteredStateWrapper<'_, Self>
     where
         Self: Sized,
     {
@@ -114,7 +114,7 @@ pub trait TxState<S: Spec>:
     /// Converts this state accessor into a [`RevertableTxState`].
     ///
     /// You *MUST* call .commit() to save the changes from the resulting accessor if you want them to be persisted
-    fn to_revertable(&mut self) -> RevertableTxState<S, Self> {
+    fn to_revertable(&mut self) -> RevertableTxState<'_, S, Self> {
         RevertableTxState::new(self)
     }
 }
@@ -143,9 +143,8 @@ pub trait PerBlockCache {
     /// guarantees provided by the SDK. Be extremely careful when using interior mutability for objects stored in the cache -
     /// any changes made to the object may not revert on transaction failure, causing possible cache corruption.
     fn get_cached<T: 'static + Send + Sync>(&self, key: Option<SlotKey>) -> Option<&T>;
-    /// Puts a value in the cache. Note that values are required to provide an esimate of their size via the
-    /// [`BorshSerializedSize`] trait.
-    fn put_cached<T: 'static + Send + Sync + BorshSerializedSize>(
+    /// Puts a value in the cache.
+    fn put_cached<T: 'static + Send + Sync>(
         &mut self,
         key: Option<SlotKey>,
         value: T,
@@ -155,6 +154,7 @@ pub trait PerBlockCache {
     /// Adds all writes from another cache to this one.
     fn update_cache_with(&mut self, other: TempCache);
 }
+
 
 /// The state accessor used during genesis. It provides unrestricted
 /// access to [`User`] and `Kernel` state, as well as limited visibility into [`Accessory`] state.  

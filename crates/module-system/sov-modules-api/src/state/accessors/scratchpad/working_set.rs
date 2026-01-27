@@ -287,7 +287,7 @@ impl<S: Spec, I: StateProvider<S>> PerBlockCache for WorkingSet<S, I> {
         self.delta.get_cached::<T>(slot_key)
     }
 
-    fn put_cached<T: 'static + Send + Sync + BorshSerializedSize>(
+    fn put_cached<T: 'static + Send + Sync>(
         &mut self,
         slot_key: Option<SlotKey>,
         value: T,

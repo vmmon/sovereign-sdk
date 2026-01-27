@@ -36,7 +36,6 @@ use futures::Stream;
 pub use initialization::Builder;
 use nonce_buffer_task::{NonceBufferInputSender, NonceBufferTask, SequencerTxExecutionBackend};
 use preferred_blob_sender::PreferredBlobSender;
-use serde_with::serde_as;
 use side_effects::SideEffectsTask;
 use sov_blob_sender::{new_blob_id, BlobExecutionStatus};
 use sov_blob_storage::{PreferredBatchData, SequenceNumber};

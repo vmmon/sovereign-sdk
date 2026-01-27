@@ -4,7 +4,7 @@ use sov_state::pinned_cache::PinnedCache;
 use sov_state::{EventContainer, SlotKey, SlotValue, TypeErasedEvent};
 
 use super::checkpoints::StateCheckpoint;
-use super::temp_cache::{BorshSerializedSize, CacheLookup, TempCache};
+use super::temp_cache::{CacheLookup, TempCache};
 use super::UniversalStateAccessor;
 use crate::capabilities::RollupHeight;
 use crate::state::accessors::StateMetricsProvider;
@@ -25,7 +25,7 @@ impl<S: Spec> StateCheckpoint<S> {
         &mut self,
         // This argument prevents this method from being called outside of genesis.
         _config: &G::Config,
-    ) -> GenesisStateAccessor<S> {
+    ) -> GenesisStateAccessor<'_, S> {
         GenesisStateAccessor {
             checkpoint: self,
             events: Vec::default(),
@@ -133,7 +133,7 @@ use crate::GenesisState;
 impl<S: Spec> GenesisState<S> for GenesisStateAccessor<'_, S> {}
 
 impl<S: Spec> PerBlockCache for GenesisStateAccessor<'_, S> {
-    fn put_cached<T: 'static + Send + Sync + BorshSerializedSize>(
+    fn put_cached<T: 'static + Send + Sync>(
         &mut self,
         slot_key: Option<SlotKey>,
         value: T,
