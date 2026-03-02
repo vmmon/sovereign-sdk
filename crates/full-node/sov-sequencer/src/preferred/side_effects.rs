@@ -180,9 +180,14 @@ where
                         )
                     })
                     .collect();
+
+		let start = std::time::Instant::now();
                 self.db
                     .bulk_insert_txs(txs, sequence_number, tx_idx_within_batch)
                     .await?;
+		let elapsed = start.elapsed();
+		debug!(elapsed=elapsed.as_micros(), "DB - bulk_insert_txs()");
+		
 
                 let checkpoint_ref = self.checkpoint_sender.borrow().clone();
 
