@@ -146,6 +146,7 @@ pub trait Runtime<S: Spec>:
         priority: u32,
         current_baseline_acceptance_probability: f64,
     ) -> f64 {
+        tracing::info!("prio {priority} - probability {current_baseline_acceptance_probability}");
         match priority {
             _ => current_baseline_acceptance_probability
         }
